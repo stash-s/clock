@@ -7,7 +7,7 @@
 
 #include <stdio.h>
 
-#define LCD_BACKLIGHT_PIN 10
+#define LCD_BACKLIGHT_PIN 3
 
 #define DS1307_CTRL_ID 0x68
 #define MAX_BUF 32
