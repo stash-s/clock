@@ -7,6 +7,8 @@
 
 #include <stdio.h>
 
+#define LCD_BACKLIGHT_PIN 10
+
 #define DS1307_CTRL_ID 0x68
 #define MAX_BUF 32
 
@@ -84,6 +86,10 @@ void setup ()
     lcd.clear();
     
     setup_interrupts ();
+
+    //lcd backlight control
+   digitalWrite( LCD_BACKLIGHT_PIN, LOW );  //backlight control pin D3 is high (on)
+   pinMode( LCD_BACKLIGHT_PIN, OUTPUT );     //D3 is an output
 }
 
 char buf[MAX_BUF];
