@@ -57,7 +57,7 @@ bool error (char *str)
 
 bool setup_interrupts () 
 {
-    Wire.begin();
+    //Wire.begin();
 
     // read SQW/OUT state
     //Wire.beginTransmission(DS1307_CTRL_ID);
