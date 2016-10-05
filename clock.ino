@@ -7,6 +7,8 @@
 
 #include <stdio.h>
 
+#include "Job.h"
+
 #define LCD_BACKLIGHT_PIN 3
 
 #define DS1307_CTRL_ID 0x68
@@ -18,45 +20,54 @@
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 
 
-class State 
+using namespace clock;
+
+
+
+void setup () 
+{
+    lcd.begin(16, 2);
+    lcd.clear();
+
+    //current_state = new MainScreen ();
+    
+    //setup_interrupts ();
+
+    //lcd backlight control
+    //digitalWrite( LCD_BACKLIGHT_PIN, LOW );  //backlight control pin D3 is high (on)
+    //pinMode( LCD_BACKLIGHT_PIN, OUTPUT );     //D3 is an output
+}        
+
+
+void loop () 
+{
+
+//    current_state->display ();   
+}
+
+
+/*
+class MainScreen;
+
+class Pendulum :public Job 
 {
   public:
-    virtual void tick    ()=0;
-    virtual void display ()=0;
     
-};
-
-class MainScreen :public State 
-{
-    static char *time_formats[];
-
-    char *time_str;// = time_formats[0];
-
-    volatile int  interrupt_count;
-    volatile bool refresh_screen;
-
-  public:
-
-    MainScreen ();
+    tmElements_t *time;
+    int interrupt_count;
     
-    virtual void tick    () override;
-    virtual void display () override;    
-};
+  private:
+    
+    Pendulum (tmElements_t * t)
+        :time (t),
+        interrupt_count(0)
+    {}
 
-MainScreen::MainScreen ()
-:time_str (time_formats[0]),
-    interrupt_count (0),
-    refresh_screen (false)
-{}
-
-
-char *MainScreen::time_formats [] = {
-    "%02d:%02d:%02d",
-    "%02d %02d %02d"
+    virtual void execute () override;
 };
 
 void
-MainScreen::tick () 
+Pendulum::execute () 
 {
     ++interrupt_count;    
     
@@ -74,8 +85,49 @@ MainScreen::tick ()
     refresh_screen = true;
 }
 
+
+class MainScreen : public Job 
+{
+  public:
+    
+    static char *time_formats[];
+
+  private:
+    
+    char *time_format;// = time_formats[0];
+
+  public :
+    
+    
+    volatile bool refresh_screen;
+
+  public:
+
+    MainScreen ();
+
+    void set_time_format (char *format) 
+    {
+        time_format = format;
+    }    
+    
+    virtual void execute () override;    
+};
+
+MainScreen::MainScreen ()
+:time_str (time_formats[0]),
+    interrupt_count (0),
+    refresh_screen (false)
+{}
+
+
+char *MainScreen::time_formats [] = {
+    "%02d:%02d:%02d",
+    "%02d %02d %02d"
+};
+
+
 void
-MainScreen::display () 
+MainScreen::execute () 
 {
     char buf[MAX_BUF];
 
@@ -147,24 +199,4 @@ bool setup_interrupts ()
     
 }
     
-
-void setup () 
-{
-    lcd.begin(16, 2);
-    lcd.clear();
-
-    current_state = new MainScreen ();
-    
-    setup_interrupts ();
-
-    //lcd backlight control
-    //digitalWrite( LCD_BACKLIGHT_PIN, LOW );  //backlight control pin D3 is high (on)
-    //pinMode( LCD_BACKLIGHT_PIN, OUTPUT );     //D3 is an output
-}        
-
-
-void loop () 
-{
-
-    current_state->display ();   
-}
+*/
