@@ -17,21 +17,46 @@
 
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 
-char *time_formats[] = {
+
+class State 
+{
+  public:
+    virtual void tick    ()=0;
+    virtual void display ()=0;
+    
+};
+
+class MainScreen :public State 
+{
+    static char *time_formats[];
+
+    char *time_str;// = time_formats[0];
+
+    volatile int  interrupt_count;
+    volatile bool refresh_screen;
+
+  public:
+
+    MainScreen ();
+    
+    virtual void tick    () override;
+    virtual void display () override;    
+};
+
+MainScreen::MainScreen ()
+:time_str (time_formats[0]),
+    interrupt_count (0),
+    refresh_screen (false)
+{}
+
+
+char *MainScreen::time_formats [] = {
     "%02d:%02d:%02d",
     "%02d %02d %02d"
 };
 
-
-char *time_str = time_formats[0];
-
-
-
-
-volatile int  interrupt_count=0;
-volatile bool refresh_screen;
-
-void clock_isr () 
+void
+MainScreen::tick () 
 {
     ++interrupt_count;    
     
@@ -47,6 +72,49 @@ void clock_isr ()
     }
     
     refresh_screen = true;
+}
+
+void
+MainScreen::display () 
+{
+    char buf[MAX_BUF];
+
+    tmElements_t tm;
+    
+    if (refresh_screen) {
+        refresh_screen = false;
+    
+
+        bool result = RTC.read(tm);
+
+        //noInterrupts();
+        
+        if (result) {
+            snprintf (buf, MAX_BUF-1, time_str, tm.Hour, tm.Minute, tm.Second);
+            lcd.setCursor(0, 1);
+            lcd.print (buf);        
+        
+        } else {        
+            lcd.setCursor(0, 0);
+            lcd.print ("boo");        
+        }
+
+        //interrupts();
+
+    }    
+
+}
+
+
+
+State * current_state = NULL; 
+
+void clock_isr () 
+{
+    if (current_state) {
+        current_state->tick();
+    }
+    
 }
 
 
@@ -84,42 +152,19 @@ void setup ()
 {
     lcd.begin(16, 2);
     lcd.clear();
+
+    current_state = new MainScreen ();
     
     setup_interrupts ();
 
     //lcd backlight control
-   digitalWrite( LCD_BACKLIGHT_PIN, LOW );  //backlight control pin D3 is high (on)
-   pinMode( LCD_BACKLIGHT_PIN, OUTPUT );     //D3 is an output
-}
-
-char buf[MAX_BUF];
-        
+    //digitalWrite( LCD_BACKLIGHT_PIN, LOW );  //backlight control pin D3 is high (on)
+    //pinMode( LCD_BACKLIGHT_PIN, OUTPUT );     //D3 is an output
+}        
 
 
 void loop () 
 {
-    tmElements_t tm;
-    
-    if (refresh_screen) {
-        refresh_screen = false;
-    
 
-        bool result = RTC.read(tm);
-
-        //noInterrupts();
-        
-        if (result) {
-
-            sprintf (buf, time_str, tm.Hour, tm.Minute, tm.Second);
-            lcd.setCursor(0, 1);
-            lcd.print (buf);        
-        
-        } else {        
-            lcd.setCursor(0, 0);
-            lcd.print ("boo");        
-        }
-
-        //interrupts();
-
-    }    
+    current_state->display ();   
 }
