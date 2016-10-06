@@ -1,7 +1,12 @@
 #ifndef PRIORITY_SCHEDULER_H
 #define PRIORITY_SCHEDULER_H
 
+#include <QueueArray.h>
+
 #include "Job.h"
+
+
+template <class T> class QueueArray;
 
 namespace clock 
 {
@@ -10,14 +15,18 @@ namespace clock
     {
 
     private:
-        Job *items[Job::max_priority];
+        QueueArray<Job *> items;
+        
+        //Job *items[Job::max_priority];
         
     public:
 
         PriorityScheduler();
         
-        void schedule (uint8_t priority, Job * job);
-        void execute  ();
+        //void schedule (uint8_t priority, const Job * job);
+        void schedule (const Job * job);
+        
+        virtual void execute  () override;
     };
         
 }

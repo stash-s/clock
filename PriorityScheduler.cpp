@@ -2,43 +2,43 @@
 #include <Arduino.h>
 #include <stddef.h>
 
+#include <QueueArray.h>
+
+
 #include "PriorityScheduler.h"
 
 using namespace clock;
 
 PriorityScheduler::PriorityScheduler () 
+{}
+
+void
+PriorityScheduler::schedule (const Job *job) 
 {
-    for (uint8_t i=0; i < Job::max_priority; ++i) {
-        items[i]=0;
-    }
+    noInterrupts();
+    items.push (const_cast<Job *> (job));
+    interrupts();
 }
 
 void
-PriorityScheduler::schedule (uint8_t priority, Job *job) 
+PriorityScheduler::execute () 
 {
-    items[priority] = job;
-}
-
-
-void
-PriorityScheduler::execute ()
-{
-    for (int i=0; i < Job::max_priority; ++i) {
-
-
+    while ( true ) {
         noInterrupts();
-        
-        Job *job = items[i];
-        
-        if (job != NULL) {            
-            items[i] = NULL;
-        }
 
-        interrupts();
+        if ( items.isEmpty () ) {
+            interrupts();
+            return;
+        }    
         
-        if (job != NULL) {            
-            job->execute ();            
+        Job * job = items.pop();
+        interrupts();
+
+        if (job) {
+            job->execute ();
+        } else {
+            return;
         }
-    }
+    }    
 }
 

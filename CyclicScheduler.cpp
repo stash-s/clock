@@ -9,10 +9,10 @@ CyclicScheduler::CyclicScheduler (uint32_t max)
 
 
 void
-CyclicScheduler::schedule  (uint8_t priority, uint32_t cycle, Job * job) 
+CyclicScheduler::schedule  (uint8_t priority, uint32_t cycle, const Job * job) 
 {
     items[priority].cycle = cycle;
-    items[priority].job   = job;
+    items[priority].job   = const_cast<Job *>(job);
 }
 
 void

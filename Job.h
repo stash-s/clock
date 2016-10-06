@@ -12,8 +12,12 @@ namespace clock
         
         static const uint8_t max_priority = 32;
         
-        virtual void execute ()=0;
-        
+        virtual void execute ();
+
+        void operator()()
+            {
+                execute ();
+            };
     };
 
 
@@ -39,6 +43,13 @@ namespace clock
     {
         return new GenericJob<T> (callable);
     }
+
+    template <typename T>
+    static GenericJob<T> make_generic_job (T callable) 
+    {
+        return GenericJob<T> (callable);
+    }
+    
 
 }
 

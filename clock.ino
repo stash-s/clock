@@ -35,92 +35,7 @@ void clock_isr ()
 }
 
 
-
-class LCDDisplayNumberJob : public Job 
-{
-    uint32_t counter;
-
-  public:
-    
-    LCDDisplayNumberJob ()
-        :counter(0)
-    {}
-    
-    void incrementCounter () 
-    {
-        ++ counter;
-    }    
-
-    uint32_t getCounter () 
-    {
-        return counter;
-    }
-    
-    void execute ()
-    {
-        char buf[MAX_BUF];
-        snprintf (buf, MAX_BUF-1, "%6lu", counter);
-        
-        lcd.setCursor(0, 1);
-        lcd.print (buf);  
-    }
-    
-};
-
-class TriggerJob : public Job 
-{
-    LCDDisplayNumberJob *target_job;
-
-  public:
-    TriggerJob (LCDDisplayNumberJob *job)
-        :target_job (job)
-    {}
-    
-    void execute () override
-    {
-        target_job->incrementCounter ();        
-    }    
-};
-
-LCDDisplayNumberJob display_job;
-
-class DisplayTriggerJob : public Job 
-{
-    void execute () override 
-    {
-        loop_scheduler.schedule (0, &display_job);
-    }
-    
-};
-
-TriggerJob          clock_trigger_job (&display_job);
-DisplayTriggerJob display_trigger_job;
-
-class SerialLoggerJob : public Job 
-{
-  public:
-    void execute () 
-    {
-        
-    }
-};
-
-
-SerialLoggerJob logger_job;
-
-class SerialTriggerJob : public Job
-{
-    
-                             
-    
-  public:
-    void execute () 
-    {
-        //loop_scheduler.schedule (1, make_job ();
-    }
-};
-
-SerialTriggerJob serial_trigger_job;
+uint32_t counter;
 
 void setup ()
 {
@@ -129,16 +44,26 @@ void setup ()
     lcd.begin(16, 2);
     lcd.clear();
 
-    interrupt_scheduler.schedule (0,  13, &clock_trigger_job);
-    interrupt_scheduler.schedule (1, 500, &display_trigger_job);
-
-    Job * my_job = make_job ([]()
-                             {
-                                 Serial.println (display_job.getCounter ());
-                             });
-
+    interrupt_scheduler.schedule (0,  13,
+                                  make_job([](){ ++counter; }));
     
-    interrupt_scheduler.schedule (2, 500, make_job ([my_job](){ loop_scheduler.schedule (1, my_job); }));
+    interrupt_scheduler.schedule (1, 500,
+                                  make_job([]() { loop_scheduler.schedule (make_job([](){
+                                                      char buf[MAX_BUF];
+                                                      snprintf (buf, MAX_BUF-1, "%6lu", counter);
+                                                      
+                                                      lcd.setCursor(0, 1);
+                                                      lcd.print (buf);
+                                                  }));    
+                                      })); 
+    
+    auto my_generic_job = make_generic_job ([]()
+                             {
+                                 lcd.setCursor(0, 0);
+                                 lcd.print (counter);
+                             });
+    
+    interrupt_scheduler.schedule (2, 2000, make_job ([my_generic_job](){ loop_scheduler.schedule (&my_generic_job); }));
 //    interrupt_scheduler.schedule (2, 500, &serial_trigger_job);
     
     

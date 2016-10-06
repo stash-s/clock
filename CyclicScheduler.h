@@ -14,8 +14,8 @@ namespace clock
 
         struct JobItem
         {
-            uint32_t  cycle;
-            Job      *job;
+            uint32_t   cycle;
+            Job       *job;
 
             JobItem ()
                     :cycle(0),
@@ -32,7 +32,7 @@ namespace clock
         
     public:
         CyclicScheduler (uint32_t max=50000);
-        void schedule (uint8_t priority, uint32_t cycle, Job * job);
+        void schedule (uint8_t priority, uint32_t cycle, const Job * job);
         void execute  ();
         
     };
