@@ -1,0 +1,140 @@
+
+#include <LiquidCrystal.h>
+#include <Wire.h>
+#include <Time.h>
+#include <DS1307RTC.h>
+
+#include <stdio.h>
+
+#define DS1307_CTRL_ID 0x68
+#define MAX_BUF 32
+
+LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
+
+char *time_formats[] = {
+    "%02d:%02d:%02d",
+    "%02d %02d %02d"
+};
+
+
+char *time_str = time_formats[0];
+
+
+
+
+volatile int interrupt_count=0;
+
+void clock_isr () 
+{
+    ++interrupt_count;    
+
+    if (time_str == time_formats[0]) {
+        time_str = time_formats[1];
+    }
+    else {
+        time_str = time_formats[0];
+    }    
+
+    //attachInterrupt(digitalPinToInterrupt (2), clock_isr, CHANGE);
+
+}
+
+
+bool error (char *str) 
+{
+    lcd.write (str);
+    return false;    
+}
+
+
+bool setup_interrupts () 
+{
+    Wire.begin();
+
+    // read SQW/OUT state
+    Wire.beginTransmission(DS1307_CTRL_ID);
+    Wire.write((uint8_t)0x07);
+    Wire.write(0x10);
+
+    if (Wire.endTransmission() != 0) return error ("error writing");
+    
+    
+    pinMode (2, INPUT_PULLUP);    
+    attachInterrupt(digitalPinToInterrupt (2), clock_isr, CHANGE);
+    interrupts();
+    
+}
+    
+
+void setup () 
+{
+    lcd.begin(16, 2);
+    lcd.clear();
+    // Print a message to the LCD.
+    
+    setup_interrupts ();
+
+    
+    
+//    lcd.blink();
+
+    
+
+}
+
+volatile bool buffer_overflow = false;
+char overfown_str[MAX_BUF];
+
+
+void loop () 
+{
+    tmElements_t tm;
+
+    bool result = RTC.read (tm);
+    
+    noInterrupts();
+
+    if (result) {
+
+        char buf[MAX_BUF];
+        
+        snprintf (buf, MAX_BUF-1, time_str, tm.Hour, tm.Minute, tm.Second);        
+        lcd.setCursor(0, 1);
+        lcd.print (buf);        
+
+
+        if (strnlen (buf, MAX_BUF-1) > 8) {
+            buffer_overflow = true;
+            strncpy (overfown_str, buf, MAX_BUF-1);
+        }
+        
+        
+    } else {
+
+        
+        lcd.setCursor(0, 1);
+        lcd.print ("boo");
+
+        
+    }
+
+    if (buffer_overflow) {
+        lcd.setCursor(0,0);
+        lcd.print (overfown_str);
+    }
+    
+
+    lcd.setCursor(10, 0);
+    char isr_str[MAX_BUF];
+    snprintf (isr_str, MAX_BUF-1, "|%5d", interrupt_count);
+    lcd.print (isr_str);
+
+    
+    interrupts();
+
+
+    
+    //delay(10);
+
+    
+}

@@ -1,0 +1,7 @@
+#ifndef PRIORITY_SCHEDULER_H
+#define PRIORITY_SCHEDULER_H
+
+namespace clock 
+{};
+
+#endif // PRIORITY_SCHEDULER_H

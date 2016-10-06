@@ -24,7 +24,7 @@ CyclicScheduler::execute ()
     ++ cycle;    
 
     
-    for (JobItem * item = items; item < items + Job::max_priority; ++item ) {
+    for (volatile JobItem * item = items; item < items + Job::max_priority; ++item ) {
         
         if (item->job != 0) {
             

@@ -23,11 +23,10 @@ void
 PriorityScheduler::execute ()
 {
     for (int i=0; i < Job::max_priority; ++i) {
+
+        Job *job = const_cast<Job *>(items[i]);
         
-        Job *job = items[i];
-        
-        if (job != NULL) {
-            
+        if (job != NULL) {            
             items[i] = NULL;
             job->execute ();
             

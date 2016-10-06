@@ -1,0 +1,10 @@
+#ifndef JOB_H
+#define JOB_H
+
+namespace clock 
+{
+
+};
+
+
+#endif // JOB_H

@@ -1,0 +1,10 @@
+#ifndef CYCLIC_SCHEDULER_H
+#define CYCLIC_SCHEDULER_H
+
+namespace clock 
+{
+
+};
+
+
+#endif // CYCLIC_SCHEDULER_H

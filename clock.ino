@@ -2,12 +2,14 @@
 #include <LiquidCrystal.h>
 #include <Wire.h>
 #include <Time.h>
-#include <TimerOne.h>
+#include <TimerThree.h>
 #include <DS1307RTC.h>
 
 #include <stdio.h>
 
 #include "Job.h"
+#include "PriorityScheduler.h"
+#include "CyclicScheduler.h"
 
 #define LCD_BACKLIGHT_PIN 3
 
@@ -23,12 +25,117 @@ LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 using namespace clock;
 
 
+PriorityScheduler loop_scheduler;
+CyclicScheduler   interrupt_scheduler;
 
-void setup () 
+
+void clock_isr () 
 {
+    interrupt_scheduler.execute ();
+}
+
+
+
+class LCDDisplayNumberJob : public Job 
+{
+    uint32_t counter;
+
+  public:
+    
+    LCDDisplayNumberJob ()
+        :counter(0)
+    {}
+    
+    void incrementCounter () 
+    {
+        ++ counter;
+    }    
+
+    uint32_t getCounter () 
+    {
+        return counter;
+    }
+    
+    void execute ()
+    {
+        char buf[MAX_BUF];
+        snprintf (buf, MAX_BUF-1, "%6d", counter);
+        
+        lcd.setCursor(0, 1);
+        lcd.print (buf);  
+    }
+    
+};
+
+class TriggerJob : public Job 
+{
+    LCDDisplayNumberJob *target_job;
+
+  public:
+    TriggerJob (LCDDisplayNumberJob *job)
+        :target_job (job)
+    {}
+    
+    void execute () override
+    {
+        target_job->incrementCounter ();        
+    }    
+};
+
+LCDDisplayNumberJob display_job;
+
+class DisplayTriggerJob : public Job 
+{
+    void execute () override 
+    {
+        loop_scheduler.schedule (0, &display_job);
+    }
+    
+};
+
+TriggerJob          clock_trigger_job (&display_job);
+DisplayTriggerJob display_trigger_job;
+
+class SerialLoggerJob : public Job 
+{
+  public:
+    void execute () 
+    {
+        Serial.println (display_job.getCounter ());
+    }
+};
+
+
+SerialLoggerJob logger_job;
+
+class SerialTriggerJob : public Job
+{
+  public:
+    void execute () 
+    {
+        loop_scheduler.schedule (1, &logger_job);
+    }
+};
+
+SerialTriggerJob serial_trigger_job;
+
+
+void setup ()
+{
+    Serial.begin(9600);
+
     lcd.begin(16, 2);
     lcd.clear();
 
+    interrupt_scheduler.schedule (0,  13, &clock_trigger_job);
+    interrupt_scheduler.schedule (1, 500, &display_trigger_job);
+    interrupt_scheduler.schedule (2, 500, &serial_trigger_job);
+    
+    
+    Timer2.initialize(500);
+    Timer2.attachInterrupt (clock_isr);
+    
+    
     //current_state = new MainScreen ();
     
     //setup_interrupts ();
@@ -41,7 +148,12 @@ void setup ()
 
 void loop () 
 {
-
+    noInterrupts ()
+    loop_scheduler.execute ();
+    interrupts();
+    
+    //delayMicroseconds(10);
+    
 //    current_state->display ();   
 }
 
