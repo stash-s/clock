@@ -1,15 +1,20 @@
 
 #include <Arduino.h>
 #include <stddef.h>
+#include <LiquidCrystal.h>
 
 #include <QueueArray.h>
 
 #include "PriorityScheduler.h"
 
+extern LiquidCrystal lcd;
+
 using namespace clock;
 
-PriorityScheduler::PriorityScheduler () 
-{}
+PriorityScheduler::PriorityScheduler ()
+{
+    items.setPrinter (lcd);
+}
 
 void
 PriorityScheduler::schedule (const Job *job) 
