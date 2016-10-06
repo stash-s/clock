@@ -59,7 +59,7 @@ class LCDDisplayNumberJob : public Job
     void execute ()
     {
         char buf[MAX_BUF];
-        snprintf (buf, MAX_BUF-1, "%6u", counter);
+        snprintf (buf, MAX_BUF-1, "%6lu", counter);
         
         lcd.setCursor(0, 1);
         lcd.print (buf);  
@@ -101,7 +101,7 @@ class SerialLoggerJob : public Job
   public:
     void execute () 
     {
-        Serial.println (display_job.getCounter ());
+        
     }
 };
 
@@ -110,25 +110,35 @@ SerialLoggerJob logger_job;
 
 class SerialTriggerJob : public Job
 {
+    
+                             
+    
   public:
     void execute () 
     {
-        loop_scheduler.schedule (1, &logger_job);
+        //loop_scheduler.schedule (1, make_job ();
     }
 };
 
 SerialTriggerJob serial_trigger_job;
 
-
 void setup ()
 {
-    //Serial.begin(9600);
+    Serial.begin(9600);
 
     lcd.begin(16, 2);
     lcd.clear();
 
     interrupt_scheduler.schedule (0,  13, &clock_trigger_job);
     interrupt_scheduler.schedule (1, 500, &display_trigger_job);
+
+    Job * my_job = make_job ([]()
+                             {
+                                 Serial.println (display_job.getCounter ());
+                             });
+
+    
+    interrupt_scheduler.schedule (2, 500, make_job ([my_job](){ loop_scheduler.schedule (1, my_job); }));
 //    interrupt_scheduler.schedule (2, 500, &serial_trigger_job);
     
     

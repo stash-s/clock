@@ -14,8 +14,8 @@ namespace clock
 
         struct JobItem
         {
-            uint32_t cycle;
-            Job    * job;
+            uint32_t  cycle;
+            Job      *job;
 
             JobItem ()
                     :cycle(0),

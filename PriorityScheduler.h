@@ -20,6 +20,6 @@ namespace clock
         void execute  ();
     };
         
-};
+}
 
 #endif // PRIORITY_SCHEDULER_H
