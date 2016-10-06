@@ -4,7 +4,6 @@
 
 #include <QueueArray.h>
 
-
 #include "PriorityScheduler.h"
 
 using namespace clock;
