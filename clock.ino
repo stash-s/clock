@@ -28,6 +28,12 @@ using namespace clock;
 PriorityScheduler loop_scheduler;
 CyclicScheduler   interrupt_scheduler;
 
+int freeRam () 
+{
+    extern int __heap_start, *__brkval; 
+    int v; 
+    return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval); 
+}
 
 void clock_isr () 
 {
@@ -46,26 +52,44 @@ void setup ()
 
     interrupt_scheduler.schedule (0,  13,
                                   make_job([](){ ++counter; }));
-    
+
+    auto job = make_job([](){
+            char buf[MAX_BUF];
+            snprintf (buf, MAX_BUF-1, "%6lu", counter);
+            
+            lcd.setCursor(0, 1);
+            lcd.print (buf);
+        });
+        
     interrupt_scheduler.schedule (1, 500,
-                                  make_job([]() { loop_scheduler.schedule (make_job([](){
-                                                      char buf[MAX_BUF];
-                                                      snprintf (buf, MAX_BUF-1, "%6lu", counter);
-                                                      
-                                                      lcd.setCursor(0, 1);
-                                                      lcd.print (buf);
-                                                  }));    
-                                      })); 
+                                  make_job([job]() { loop_scheduler.schedule (job); })); 
     
-    auto my_generic_job = make_generic_job ([]()
+    auto my_generic_job = make_job ([]()
                              {
-                                 lcd.setCursor(0, 0);
-                                 lcd.print (counter);
+                                 char buf[MAX_BUF];
+                                 snprintf (buf, MAX_BUF-1, "| %6lu", counter);
+                                 
+                                 lcd.setCursor(7, 1);
+                                 lcd.print (buf);
                              });
     
-    interrupt_scheduler.schedule (2, 2000, make_job ([my_generic_job](){ loop_scheduler.schedule (&my_generic_job); }));
+    interrupt_scheduler.schedule (2, 2000, make_job ([my_generic_job](){ loop_scheduler.schedule (my_generic_job); }));
+
+
 //    interrupt_scheduler.schedule (2, 500, &serial_trigger_job);
+
+    auto print_free_mem_job = make_job([]()
+                                       {
+                                           char buf[MAX_BUF];
+                                           snprintf (buf, MAX_BUF-1, "free:%6d", freeRam());
+                                 
+                                           lcd.setCursor(0, 0);
+                                           lcd.print (buf);
+                                       });
     
+    interrupt_scheduler.schedule (3, 2000, make_job ([print_free_mem_job](){ loop_scheduler.schedule (print_free_mem_job); }));
+    
+                                           
     
     Timer1.initialize(500);
     Timer1.attachInterrupt (clock_isr);
