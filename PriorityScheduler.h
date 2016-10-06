@@ -10,7 +10,7 @@ namespace clock
     {
 
     private:
-        volatile Job *items[Job::max_priority];
+        Job *items[Job::max_priority];
         
     public:
 

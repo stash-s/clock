@@ -2,7 +2,7 @@
 #include <LiquidCrystal.h>
 #include <Wire.h>
 #include <Time.h>
-#include <TimerThree.h>
+#include <TimerOne.h>
 #include <DS1307RTC.h>
 
 #include <stdio.h>
@@ -59,7 +59,7 @@ class LCDDisplayNumberJob : public Job
     void execute ()
     {
         char buf[MAX_BUF];
-        snprintf (buf, MAX_BUF-1, "%6d", counter);
+        snprintf (buf, MAX_BUF-1, "%6u", counter);
         
         lcd.setCursor(0, 1);
         lcd.print (buf);  
@@ -122,18 +122,18 @@ SerialTriggerJob serial_trigger_job;
 
 void setup ()
 {
-    Serial.begin(9600);
+    //Serial.begin(9600);
 
     lcd.begin(16, 2);
     lcd.clear();
 
     interrupt_scheduler.schedule (0,  13, &clock_trigger_job);
     interrupt_scheduler.schedule (1, 500, &display_trigger_job);
-    interrupt_scheduler.schedule (2, 500, &serial_trigger_job);
+//    interrupt_scheduler.schedule (2, 500, &serial_trigger_job);
     
     
-    Timer2.initialize(500);
-    Timer2.attachInterrupt (clock_isr);
+    Timer1.initialize(500);
+    Timer1.attachInterrupt (clock_isr);
     
     
     //current_state = new MainScreen ();
@@ -148,9 +148,7 @@ void setup ()
 
 void loop () 
 {
-    noInterrupts ()
     loop_scheduler.execute ();
-    interrupts();
     
     //delayMicroseconds(10);
     

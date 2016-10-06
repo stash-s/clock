@@ -1,5 +1,6 @@
-#include <stddef.h>
 
+#include <Arduino.h>
+#include <stddef.h>
 
 #include "PriorityScheduler.h"
 
@@ -24,12 +25,19 @@ PriorityScheduler::execute ()
 {
     for (int i=0; i < Job::max_priority; ++i) {
 
-        Job *job = const_cast<Job *>(items[i]);
+
+        noInterrupts();
+        
+        Job *job = items[i];
         
         if (job != NULL) {            
             items[i] = NULL;
-            job->execute ();
-            
+        }
+
+        interrupts();
+        
+        if (job != NULL) {            
+            job->execute ();            
         }
     }
 }

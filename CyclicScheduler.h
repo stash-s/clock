@@ -28,7 +28,7 @@ namespace clock
 
         uint32_t cycle;
         uint32_t max_cycle;
-        JobItem volatile  items[max_priority];
+        JobItem items[max_priority];
         
     public:
         CyclicScheduler (uint32_t max=50000);

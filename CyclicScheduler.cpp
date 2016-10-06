@@ -24,18 +24,13 @@ CyclicScheduler::execute ()
     ++ cycle;    
 
     
-    for (volatile JobItem * item = items; item < items + Job::max_priority; ++item ) {
+    for (JobItem * item = items; item < items + Job::max_priority; ++item ) {
         
         if (item->job != 0) {
-            
             if (0 == (cycle % item->cycle)) {
-
                 item->job->execute();
-                
             }
-                
         }
-        
     }
     
 }
