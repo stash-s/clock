@@ -48,9 +48,6 @@ void clock_isr ()
     interrupt_scheduler.execute ();
 }
 
-
-uint32_t counter;
-
 tmElements_t * parseTime (tmElements_t *tm, char *str) ;
 
 
@@ -63,9 +60,6 @@ void setup ()
 
     parseTime (&tm, __TIME__);
     
-    interrupt_scheduler.schedule (0,  13,
-                                  make_job([](){ ++counter; }));
-
     auto display_time_job = make_job([](){
             char buf[MAX_BUF];
             snprintf (buf, MAX_BUF-1, time_format, tm.Hour, tm.Minute, tm.Second);
@@ -126,7 +120,20 @@ void setup ()
     
     interrupt_scheduler.schedule (3, 2000, make_job ([print_free_mem_job](){ loop_scheduler.schedule (print_free_mem_job); }));
     
+
+    auto read_rtc_clock_job = make_job([]()
+                                       {
+                                           lcd.setCursor (15,0);
+                                           lcd.print ("_");
+                                           RTC.read(tm);
+                                           lcd.setCursor (15,0);
+                                           lcd.print ("+");
+                                       });
+    
                                            
+    interrupt_scheduler.schedule (4, 10000, make_job ([read_rtc_clock_job](){ loop_scheduler.schedule (read_rtc_clock_job); }));
+                                           
+    
     
     Timer1.initialize(1000);
     Timer1.attachInterrupt (clock_isr);
