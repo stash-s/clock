@@ -27,6 +27,14 @@ using namespace clock;
 
 PriorityScheduler loop_scheduler;
 CyclicScheduler   interrupt_scheduler;
+tmElements_t      tm;
+
+char *time_formats [] = {
+    "%02d:%02d:%02d",
+    "%02d %02d %02d"
+};
+
+char *time_format = time_formats[0];
 
 int freeRam () 
 {
@@ -43,6 +51,9 @@ void clock_isr ()
 
 uint32_t counter;
 
+tmElements_t * parseTime (tmElements_t *tm, char *str) ;
+
+
 void setup ()
 {
     Serial.begin(9600);
@@ -50,31 +61,57 @@ void setup ()
     lcd.begin(16, 2);
     lcd.clear();
 
+    parseTime (&tm, __TIME__);
+    
     interrupt_scheduler.schedule (0,  13,
                                   make_job([](){ ++counter; }));
 
-    auto job = make_job([](){
+    auto display_time_job = make_job([](){
             char buf[MAX_BUF];
-            snprintf (buf, MAX_BUF-1, "%6lu", counter);
+            snprintf (buf, MAX_BUF-1, time_format, tm.Hour, tm.Minute, tm.Second);
             
-            lcd.setCursor(0, 1);
+            lcd.setCursor(4, 0);
             lcd.print (buf);
         });
         
-    interrupt_scheduler.schedule (1, 500,
-                                  make_job([job]() { loop_scheduler.schedule (job); })); 
-    
-    auto my_generic_job = make_job ([]()
-                             {
-                                 char buf[MAX_BUF];
-                                 snprintf (buf, MAX_BUF-1, "| %6lu", counter);
-                                 
-                                 lcd.setCursor(7, 1);
-                                 lcd.print (buf);
-                             });
-    
-    interrupt_scheduler.schedule (2, 2000, make_job ([my_generic_job](){ loop_scheduler.schedule (my_generic_job); }));
+    interrupt_scheduler.schedule (1, 1000,
+                                  make_job([display_time_job]() {
 
+                                          ++ tm.Second;
+                                          
+                                          if (tm.Second >= 60) {
+                                              
+                                              tm.Second = 0;
+                                              ++ tm.Minute;
+
+                                              if (tm.Minute >= 60) {
+
+                                                  tm.Minute = 0;
+                                                  ++ tm.Hour;
+
+                                                  if (tm.Hour >= 24) {
+
+                                                      tm.Hour = 0;
+                                                  }
+                                              }
+                                          }
+                                          
+                                          
+                                          loop_scheduler.schedule (display_time_job);
+                                      }));
+
+    interrupt_scheduler.schedule (2, 500,
+                                  make_job([display_time_job]() {
+
+                                          if (time_format == time_formats[0]) {
+                                              time_format = time_formats[1];
+                                          } else {
+                                              time_format = time_formats[0];
+                                          }
+                                          
+                                          loop_scheduler.schedule (display_time_job);
+                                      }));
+    
 
 //    interrupt_scheduler.schedule (2, 500, &serial_trigger_job);
 
@@ -83,7 +120,7 @@ void setup ()
                                            char buf[MAX_BUF];
                                            snprintf (buf, MAX_BUF-1, "free:%6d", freeRam());
                                  
-                                           lcd.setCursor(0, 0);
+                                           lcd.setCursor(0, 1);
                                            lcd.print (buf);
                                        });
     
@@ -91,7 +128,7 @@ void setup ()
     
                                            
     
-    Timer1.initialize(500);
+    Timer1.initialize(1000);
     Timer1.attachInterrupt (clock_isr);
     
     
@@ -113,6 +150,28 @@ void loop ()
     
 //    current_state->display ();   
 }
+
+tmElements_t * parseTime (tmElements_t *tm, char *str) 
+{
+    int hour, minute, sec;
+    
+    if (sscanf (str, "%d:%d:%d", &hour, &minute, &sec)) {
+        tm->Hour   = hour;
+        tm->Minute = minute;
+        tm->Second = sec;
+
+        return tm;
+        
+    }
+    return NULL;
+}
+
+tmElements_t * parseDate(tmElements_t *tm, char *str)
+{
+    
+
+}
+
 
 
 /*

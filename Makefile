@@ -1,6 +1,6 @@
 #BOARD_TAG=nano
 BOARD_SUB=atmega328
-ARDUINO_DIR=/home/stash/arduino-1.6.9
+ARDUINO_DIR=/opt/arduino
 
 CXXFLAGS=-std=c++11 -Wall -pedantic
 
